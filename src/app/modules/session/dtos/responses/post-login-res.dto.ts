@@ -6,4 +6,9 @@ export class PostLoginResDto {
   @IsString()
   @IsNotEmpty()
   jwt: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  refresh_token: string;
 }

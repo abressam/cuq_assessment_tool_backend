@@ -1,13 +1,28 @@
 import { sign, verify, JwtPayload, Secret } from 'jsonwebtoken';
 import * as Crypto from 'crypto';
 
-export function getJsonWebToken(userId: number, secret: Secret): string {
-  return sign({ userId }, secret, { expiresIn: '1d' });
+export type TokenType = 'access' | 'refresh';
+
+export function getJsonWebToken(
+  userId: number,
+  secret: Secret,
+  type: TokenType = 'access',
+): string {
+  return sign({ userId, type }, secret, {
+    expiresIn: type === 'access' ? '1h' : '7d',
+  });
 }
 
-export function checkJsonWebToken(token: string, secret: Secret): JwtPayload {
+export function checkJsonWebToken(
+  token: string,
+  secret: Secret,
+  expectedType?: TokenType,
+): JwtPayload {
   const payload = verify(token, secret);
-  if (typeof payload === 'string') {
+  if (
+    typeof payload === 'string' ||
+    (expectedType && payload.type !== expectedType)
+  ) {
     throw new Error('Invalid JWT payload');
   }
   return payload;

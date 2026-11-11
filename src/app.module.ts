@@ -1,8 +1,8 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { SessionMiddleware } from '@app/modules/session/middlewares/session.middleware';
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from '@app/modules/session/guards/auth.guard';
 import { SessionModule } from '@app/modules/session/session.module';
 import { UserModule } from '@app/modules/user/user.module';
-import { UserController } from '@app/modules/user/controllers/user.controller';
 import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import appConfig from '@app/configs/app.config';
@@ -18,9 +18,11 @@ import dbConfig from '@app/configs/db.config';
     }),
     SequelizeModule.forRoot(dbConfig),
   ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(SessionMiddleware).forRoutes(UserController);
-  }
-}
+export class AppModule {}

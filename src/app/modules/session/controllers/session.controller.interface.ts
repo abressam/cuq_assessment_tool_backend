@@ -6,4 +6,5 @@ import { PostCredentialsReqDto } from '@app/modules/session/dtos/requests/post-c
 export interface SessionControllerInterface {
   postLogin(query: PostLoginReqDto): Promise<PostLoginResDto>;
   postCredentials(body: PostCredentialsReqDto): Promise<GetUserResDto>;
+  refreshToken(token: string | undefined): Promise<PostLoginResDto>;
 }

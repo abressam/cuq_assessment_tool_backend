@@ -13,7 +13,10 @@ import {
   HttpCode,
   HttpException,
   Logger,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Public } from '@app/modules/session/decorators/public.decorator';
 
 @ApiTags('session')
 @Controller('session')
@@ -21,6 +24,7 @@ export class SessionController implements SessionControllerInterface {
   constructor(private readonly sessionService: SessionService) {}
 
   @Post('login')
+  @Public()
   @HttpCode(200)
   @ApiOperation({ summary: 'Post the login credentials data' })
   @ApiResponse({
@@ -29,8 +33,8 @@ export class SessionController implements SessionControllerInterface {
     type: PostLoginResDto,
   })
   @ApiResponse({
-    status: 500,
-    description: 'Internal server error',
+    status: 401,
+    description: 'Invalid credentials',
     type: ErrorDto,
   })
   async postLogin(@Body() body: PostLoginReqDto) {
@@ -49,6 +53,7 @@ export class SessionController implements SessionControllerInterface {
   }
 
   @Post('register')
+  @Public()
   @HttpCode(200)
   @ApiOperation({ summary: 'Post the credentials data' })
   @ApiResponse({
@@ -74,5 +79,28 @@ export class SessionController implements SessionControllerInterface {
       }
       throw new HttpException('Internal server error', 500);
     }
+  }
+
+  @Post('refresh')
+  @Public()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Refresh access and refresh JWTs' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a rotated access and refresh token pair',
+    type: PostLoginResDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token',
+    type: ErrorDto,
+  })
+  async refreshToken(
+    @Headers('refresh-token') refreshToken: string | undefined,
+  ): Promise<PostLoginResDto> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+    return this.sessionService.refreshToken(refreshToken);
   }
 }
