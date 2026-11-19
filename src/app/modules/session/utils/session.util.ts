@@ -8,7 +8,7 @@ export function getJsonWebToken(
   secret: Secret,
   type: TokenType = 'access',
 ): string {
-  return sign({ userId, type }, secret, {
+  return sign({ id: userId, type }, secret, {
     expiresIn: type === 'access' ? '1h' : '7d',
   });
 }
@@ -26,6 +26,10 @@ export function checkJsonWebToken(
     throw new Error('Invalid JWT payload');
   }
   return payload;
+}
+
+export function generatePasswordSalt(): string {
+  return Crypto.randomBytes(16).toString('hex');
 }
 
 export function encodePassword(salt: string, password: string): string {

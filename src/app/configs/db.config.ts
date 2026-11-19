@@ -1,17 +1,16 @@
+import { ConfigService } from '@nestjs/config';
 import { SequelizeModuleOptions } from '@nestjs/sequelize';
 
-const { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME } = process.env;
-
-const dbConfig: SequelizeModuleOptions = {
+const dbConfig = (config: ConfigService): SequelizeModuleOptions => ({
   dialect: 'postgres',
-  host: DB_HOST,
-  port: parseInt(DB_PORT ?? '', 10) || 5432,
-  username: DB_USER,
-  password: DB_PASS,
-  database: DB_NAME,
+  host: config.getOrThrow<string>('DB_HOST'),
+  port: parseInt(config.get<string>('DB_PORT') ?? '', 10) || 5432,
+  username: config.getOrThrow<string>('DB_USER'),
+  password: config.getOrThrow<string>('DB_PASSWORD'),
+  database: config.getOrThrow<string>('DB_NAME'),
   autoLoadModels: true,
   synchronize: true,
   logging: false,
-};
+});
 
 export default dbConfig;

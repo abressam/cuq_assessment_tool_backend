@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const prefix = config.getOrThrow<string>('app.prefix');
 
@@ -39,8 +39,6 @@ async function bootstrap(): Promise<void> {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        in: 'header',
       },
       'auth',
     )

@@ -42,6 +42,16 @@ export class UserController implements UserControllerInterface {
     description: 'Internal server error',
     type: ErrorDto,
   })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing, invalid, or expired access token',
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorDto,
+  })
   async getUser(@Request() req: ExpressRequest) {
     const logger = new Logger(UserController.name);
 
@@ -70,6 +80,16 @@ export class UserController implements UserControllerInterface {
   @ApiResponse({
     status: 500,
     description: 'Internal server error',
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing, invalid, or expired access token',
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
     type: ErrorDto,
   })
   async putUser(
@@ -103,6 +123,16 @@ export class UserController implements UserControllerInterface {
   @ApiResponse({
     status: 500,
     description: 'Internal server error',
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing, invalid, or expired access token',
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
     type: ErrorDto,
   })
   async deleteUser(@Request() req: ExpressRequest) {

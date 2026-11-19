@@ -1,6 +1,6 @@
 import { name, version, description } from '../../../package.json';
 
-const { PORT, SALT, SECRET } = process.env;
+const { PORT } = process.env;
 
 export default () => ({
   app: {
@@ -13,9 +13,5 @@ export default () => ({
   cors: {
     origin: true,
     credentials: true,
-  },
-  auth: {
-    salt: SALT,
-    secret: SECRET,
   },
 });

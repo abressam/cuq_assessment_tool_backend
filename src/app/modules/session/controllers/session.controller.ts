@@ -5,7 +5,12 @@ import { GetUserResDto } from '@app/modules/user/dtos/responses/get-user-res.dto
 import { PostLoginResDto } from '@app/modules/session/dtos/responses/post-login-res.dto';
 import { PostLoginReqDto } from '@app/modules/session/dtos/requests/post-login-req.dto';
 import { PostCredentialsReqDto } from '@app/modules/session/dtos/requests/post-credentials-req.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -94,6 +99,11 @@ export class SessionController implements SessionControllerInterface {
     status: 401,
     description: 'Invalid or expired refresh token',
     type: ErrorDto,
+  })
+  @ApiHeader({
+    name: 'refresh-token',
+    description: 'Refresh token returned by the login endpoint',
+    required: true,
   })
   async refreshToken(
     @Headers('refresh-token') refreshToken: string | undefined,

@@ -1,19 +1,20 @@
 import { UserServiceInterface } from '@app/modules/user/services/user.service.interface';
-import { ConfigService } from '@nestjs/config';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DeleteUserResDto } from '@app/modules/user/dtos/responses/delete-user-res.dto';
 import { GetUserResDto } from '@app/modules/user/dtos/responses/get-user-res.dto';
 import { PutUserReqDto } from '@app/modules/user/dtos/requests/put-user-req.dto';
 import { User } from '@app/modules/user/models/user.model';
-import { encodePassword } from '@app/modules/session/utils/session.util';
+import {
+  encodePassword,
+  generatePasswordSalt,
+} from '@app/modules/session/utils/session.util';
 
 @Injectable()
 export class UserService implements UserServiceInterface {
   constructor(
     @InjectModel(User)
     private userModel: typeof User,
-    private readonly configService: ConfigService,
   ) {}
 
   async getUser(userId: number): Promise<GetUserResDto> {
@@ -34,19 +35,22 @@ export class UserService implements UserServiceInterface {
   }
 
   async putUser(userId: number, body: PutUserReqDto): Promise<GetUserResDto> {
-    const salt = this.configService.getOrThrow<string>('auth.salt');
     const userOld = await this.userModel.findByPk(userId);
 
     this.validateUser(userOld);
 
-    const password = body.password
-      ? encodePassword(salt, body.password)
-      : userOld.password;
+    let passwordSalt = userOld.passwordSalt;
+    let password = userOld.password;
+    if (body.password) {
+      passwordSalt = generatePasswordSalt();
+      password = encodePassword(passwordSalt, body.password);
+    }
 
     await this.userModel.update(
       {
         name: body.name ?? userOld.name,
         password,
+        passwordSalt,
       },
       {
         where: {

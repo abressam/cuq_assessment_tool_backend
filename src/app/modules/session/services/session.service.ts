@@ -15,6 +15,7 @@ import {
   checkJsonWebToken,
   getJsonWebToken,
   encodePassword,
+  generatePasswordSalt,
 } from '@app/modules/session/utils/session.util';
 import { User } from '@app/modules/user/models/user.model';
 import { SessionToken } from '@app/modules/session/models/session-token.model';
@@ -30,17 +31,21 @@ export class SessionService implements SessionServiceInterface {
   ) {}
 
   async postLogin(body: PostLoginReqDto): Promise<PostLoginResDto> {
-    const secret = this.configService.getOrThrow<string>('auth.secret');
-    const salt = this.configService.getOrThrow<string>('auth.salt');
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
 
     const user = await this.userModel.findOne({
       where: {
         email: body?.email,
-        password: encodePassword(salt, body?.password),
       },
     });
 
     this.validateCredentials(user);
+    if (
+      !user.passwordSalt ||
+      user.password !== encodePassword(user.passwordSalt, body.password)
+    ) {
+      throw new UnauthorizedException('Invalid session');
+    }
 
     const tokens = this.createTokens(user.id, secret);
     await this.sessionTokenModel.upsert({
@@ -51,7 +56,7 @@ export class SessionService implements SessionServiceInterface {
   }
 
   async postCredentials(body: PostCredentialsReqDto): Promise<GetUserResDto> {
-    const salt = this.configService.getOrThrow<string>('auth.salt');
+    const passwordSalt = generatePasswordSalt();
 
     const user = await this.userModel
       .findOrCreate({
@@ -61,7 +66,8 @@ export class SessionService implements SessionServiceInterface {
         defaults: {
           name: body.name,
           email: body.email,
-          password: encodePassword(salt, body.password),
+          password: encodePassword(passwordSalt, body.password),
+          passwordSalt,
         },
       })
       .then(([user, wasCreated]) => {
@@ -76,7 +82,7 @@ export class SessionService implements SessionServiceInterface {
   }
 
   async refreshToken(token: string): Promise<PostLoginResDto> {
-    const secret = this.configService.getOrThrow<string>('auth.secret');
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
     let payload;
 
     try {
@@ -85,7 +91,7 @@ export class SessionService implements SessionServiceInterface {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const userId = payload.userId;
+    const userId = payload.id;
     if (typeof userId !== 'number') {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -112,7 +118,7 @@ export class SessionService implements SessionServiceInterface {
   }
 
   async authenticateAccessToken(token: string): Promise<number> {
-    const secret = this.configService.getOrThrow<string>('auth.secret');
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
     let payload;
 
     try {
@@ -121,7 +127,7 @@ export class SessionService implements SessionServiceInterface {
       throw new UnauthorizedException('Invalid session');
     }
 
-    const userId = payload.userId;
+    const userId = payload.id;
     if (typeof userId !== 'number') {
       throw new UnauthorizedException('Invalid session');
     }
