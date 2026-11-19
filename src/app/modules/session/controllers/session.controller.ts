@@ -1,0 +1,116 @@
+import { SessionService } from '@app/modules/session/services/session.service';
+import { SessionControllerInterface } from '@app/modules/session/controllers/session.controller.interface';
+import { ErrorDto } from '@app/modules/session/dtos/error.dto';
+import { GetUserResDto } from '@app/modules/user/dtos/responses/get-user-res.dto';
+import { PostLoginResDto } from '@app/modules/session/dtos/responses/post-login-res.dto';
+import { PostLoginReqDto } from '@app/modules/session/dtos/requests/post-login-req.dto';
+import { PostCredentialsReqDto } from '@app/modules/session/dtos/requests/post-credentials-req.dto';
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpException,
+  Logger,
+  Headers,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Public } from '@app/modules/session/decorators/public.decorator';
+
+@ApiTags('session')
+@Controller('session')
+export class SessionController implements SessionControllerInterface {
+  constructor(private readonly sessionService: SessionService) {}
+
+  @Post('login')
+  @Public()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Post the login credentials data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a JSON with the jwt data',
+    type: PostLoginResDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid credentials',
+    type: ErrorDto,
+  })
+  async postLogin(@Body() body: PostLoginReqDto) {
+    const logger = new Logger(SessionController.name);
+
+    try {
+      logger.log('postLogin()');
+      return await this.sessionService.postLogin(body);
+    } catch (error) {
+      logger.error(error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Internal server error', 500);
+    }
+  }
+
+  @Post('register')
+  @Public()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Post the credentials data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a JSON with the credentials data',
+    type: GetUserResDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+    type: ErrorDto,
+  })
+  async postCredentials(@Body() body: PostCredentialsReqDto) {
+    const logger = new Logger(SessionController.name);
+
+    try {
+      logger.log('postCredentials()');
+      return await this.sessionService.postCredentials(body);
+    } catch (error) {
+      logger.error(error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Internal server error', 500);
+    }
+  }
+
+  @Post('refresh')
+  @Public()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Refresh access and refresh JWTs' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a rotated access and refresh token pair',
+    type: PostLoginResDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token',
+    type: ErrorDto,
+  })
+  @ApiHeader({
+    name: 'refresh-token',
+    description: 'Refresh token returned by the login endpoint',
+    required: true,
+  })
+  async refreshToken(
+    @Headers('refresh-token') refreshToken: string | undefined,
+  ): Promise<PostLoginResDto> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+    return this.sessionService.refreshToken(refreshToken);
+  }
+}
